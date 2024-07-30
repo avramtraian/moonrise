@@ -17,6 +17,11 @@ class RefCounted {
     template<typename T>
     friend class RefPtr;
 
+public:
+    // This function is part of the public API as it can be accessed by anyone.
+    // Useful when debugging or trying to report memory leaks.
+    NODISCARD ALWAYS_INLINE u32 get_reference_count() const { return m_reference_count; }
+
 protected:
     RefCounted() = default;
     virtual ~RefCounted() = default;
