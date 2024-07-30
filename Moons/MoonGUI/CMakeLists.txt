@@ -7,6 +7,9 @@ set(MOON_GUI_SOURCE_FILES
     Application.cpp
     Application.h
     GUI.h
+    Native/NativeWindow.h
+    Native/Windows/WindowsHeaders.h
+    Native/Windows/WindowsNativeWindow.cpp
 )
 
 add_library(Moon-GUI SHARED ${MOON_GUI_SOURCE_FILES})
