@@ -10,47 +10,37 @@
 
 namespace AT {
 
-template<typename T>
 class RefCounted {
-public:
-    RefCounted()
-        : m_reference_count(0)
-    {}
+    AT_MAKE_NONCOPYABLE(RefCounted);
+    AT_MAKE_NONMOVABLE(RefCounted);
+
+    template<typename T>
+    friend class RefPtr;
+
+protected:
+    RefCounted() = default;
     virtual ~RefCounted() = default;
 
-    void increment_reference_count()
+private:
+    ALWAYS_INLINE void increment_reference_count()
     {
-        AT_ASSERT_DEBUG(m_reference_count > 0);
-
-        // TODO: Ensure that addition would not overflow.
+        // TODO: Ensure that the addition would not overflow the reference counter.
         ++m_reference_count;
     }
 
-    bool decrement_reference_count()
-    {
-        AT_ASSERT_DEBUG(m_reference_count > 0);
-
-        if (--m_reference_count == 0) {
-            auto* self = static_cast<T*>(this);
-            delete self;
-            return true;
-        }
-
-        return false;
-    }
-
-    u32 reference_count() const
+    // Returns true if the reference count hits zero after the decrementation.
+    NODISCARD ALWAYS_INLINE bool decrement_reference_count()
     {
         AT_ASSERT(m_reference_count > 0);
-        return m_reference_count;
+        --m_reference_count;
+        return (m_reference_count == 0);
     }
 
 private:
-    u32 m_reference_count;
+    u32 m_reference_count { 0 };
 };
 
 template<typename T>
-requires (is_derived_from<T, RefCounted<T>>)
 class RefPtr {
     template<typename Q>
     friend RefPtr<Q> adopt_ref(Q*);
@@ -131,8 +121,18 @@ private:
         }
     }
 
-    void increment_reference_count() { static_cast<RefCounted<T>*>(m_instance)->increment_reference_count(); }
-    void decrement_reference_count() { static_cast<RefCounted<T>*>(m_instance)->decrement_reference_count(); }
+    ALWAYS_INLINE void increment_reference_count() const
+    {
+        static_assert(is_derived_from<T, RefCounted>, "Trying to use RefPtr<T> when T is not derived from RefCounted!");
+        static_cast<RefCounted*>(m_instance)->increment_reference_count();
+    }
+
+    ALWAYS_INLINE void decrement_reference_count() const
+    {
+        static_assert(is_derived_from<T, RefCounted>, "Trying to use RefPtr<T> when T is not derived from RefCounted!");
+        if (RefCounted* ref_counted = static_cast<RefCounted*>(m_instance); ref_counted->decrement_reference_count())
+            ref_counted->~RefCounted();
+    }
 
 private:
     T* m_instance;
