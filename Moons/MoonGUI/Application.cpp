@@ -3,42 +3,43 @@
  * SPDX-License-Identifier: BSD-3-Clause.
  */
 
-#include "MoonGUI/Application.h"
-#include "AT/OwnPtr.h"
-#include "MoonCore/Log.h"
+#include <AT/OwnPtr.h>
+#include <MoonCore/Log.h>
+#include <MoonGUI/Application.h>
 
 namespace GUI {
 
-static OwnPtr<Application> s_application_instance;
+static Application* s_application_instance;
 
-ErrorOr<void> Application::create(const Info& info)
+ErrorOr<void> Application::construct()
 {
-    (void)info;
-
-    if (s_application_instance.is_valid()) {
+    if (s_application_instance) {
         errorln("The application instance was already initialized!"sv);
         return Error::Unknown;
     }
 
-    s_application_instance = make_own<Application>();
+    s_application_instance = new Application;
+    if (!s_application_instance)
+        return Error::OutOfMemory;
     return {};
 }
 
-void Application::destroy()
+void Application::destruct()
 {
-    if (!s_application_instance.is_valid()) {
+    if (!s_application_instance) {
         errorln("The application instance was already destroyed!"sv);
         return;
     }
 
     // Release the application instance memory.
-    s_application_instance.clear();
+    delete s_application_instance;
+    s_application_instance = nullptr;
 }
 
 Application& Application::get()
 {
-    AT_ASSERT(s_application_instance.is_valid());
-    return s_application_instance.get();
+    AT_ASSERT(s_application_instance);
+    return *s_application_instance;
 }
 
 } // namespace GUI

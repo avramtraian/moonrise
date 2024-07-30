@@ -15,16 +15,14 @@ class Application {
     AT_MAKE_NONMOVABLE(Application);
 
 public:
-    struct Info {};
-
-public:
-    Application() = default;
-    virtual ~Application() = default;
-
-    GUI_API static ErrorOr<void> create(const Info& info);
-    GUI_API static void destroy();
+    GUI_API static ErrorOr<void> construct();
+    GUI_API static void destruct();
 
     NODISCARD GUI_API static Application& get();
+
+private:
+    Application() = default;
+    ~Application() = default;
 };
 
 } // namespace GUI
