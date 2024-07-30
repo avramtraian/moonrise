@@ -211,7 +211,7 @@ public:
     }
 
 public:
-    ALWAYS_INLINE void remove(usize remove_index, usize count)
+    ALWAYS_INLINE void remove(usize remove_index, usize count = 1)
     {
         AT_ASSERT(remove_index + count <= m_count);
 
