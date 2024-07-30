@@ -211,6 +211,18 @@ public:
     }
 
 public:
+    ALWAYS_INLINE void remove(usize remove_index, usize count)
+    {
+        AT_ASSERT(remove_index + count <= m_count);
+
+        for (usize index = remove_index; index < remove_index + count; ++index)
+            m_elements[index].~T();
+
+        // NOTE: The 'move_elements' utility function iterates over the destination and source buffers in forward order,
+        move_elements(m_elements + remove_index, m_elements + remove_index + count, m_count - remove_index - count);
+        m_count -= count;
+    }
+
     ALWAYS_INLINE void remove_last()
     {
         AT_ASSERT(has_elements());
