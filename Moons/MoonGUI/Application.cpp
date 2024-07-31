@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: BSD-3-Clause.
  */
 
-#include <AT/OwnPtr.h>
 #include <MoonCore/Log.h>
 #include <MoonGUI/Application.h>
 
@@ -21,6 +20,12 @@ ErrorOr<void> Application::construct()
     s_application_instance = new Application;
     if (!s_application_instance)
         return Error::OutOfMemory;
+
+    s_application_instance->m_event_loop.set_event_callback([](void* native_window_handle, const Native::Event& event) {
+        Application& application = Application::get();
+        application.on_event(native_window_handle, event);
+    });
+
     return {};
 }
 
@@ -36,7 +41,9 @@ void Application::destruct()
         if (window->get_reference_count() != 1) {
             // By the time the global application instance is destroyed, all widgets or objects that hold
             // a reference to a window should have been destroyed. This is most likely a memory leak!
-            errorln("Window with native handle '{}' has an invalid reference count!"sv, window->native().get_handle());
+            errorln(
+                "Window with native handle '{}' has an invalid reference count! ({})"sv, window->native().get_handle(), window->get_reference_count()
+            );
         }
     }
 
@@ -51,6 +58,33 @@ Application& Application::get()
 {
     AT_ASSERT(s_application_instance);
     return *s_application_instance;
+}
+
+ErrorOr<void> Application::start_event_loop()
+{
+    TRY(m_event_loop.enter_locking_event_loop());
+    return {};
+}
+
+void Application::close()
+{
+    // Close the event loop. This will eventually cause the program execution to return at the callsite
+    // of the 'start_event_loop' function.
+    m_event_loop.exit_locking_event_loop();
+}
+
+void Application::on_event(void* window_native_handle, const Native::Event& event)
+{
+    const Optional<RefPtr<Window>> optional_window = get_window_from_native_handle(window_native_handle);
+    AT_ASSERT(optional_window.has_value());
+    RefPtr<Window> window = optional_window.value();
+
+    switch (event.get_type()) {
+        case Native::EventType::ApplicationClosed: {
+            m_event_loop.exit_locking_event_loop();
+            break;
+        }
+    }
 }
 
 Optional<RefPtr<Window>> Application::get_window_from_native_handle(void* window_native_handle)

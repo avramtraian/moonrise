@@ -7,6 +7,11 @@
 
 namespace GUI {
 
+namespace Native {
+class Event;
+class EventLoop;
+} // namespace Native
+
 class Application;
 class Window;
 

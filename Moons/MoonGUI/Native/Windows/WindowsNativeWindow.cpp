@@ -4,10 +4,13 @@
  */
 
 #include <MoonCore/Log.h>
+#include <MoonGUI/Application.h>
 #include <MoonGUI/Native/NativeWindow.h>
 #include <MoonGUI/Native/Windows/WindowsHeaders.h>
 
 namespace GUI::Native {
+
+static LRESULT window_procedure(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param);
 
 ErrorOr<void> Window::initialize(
     Optional<u32> width, Optional<u32> height, WindowStartMaximized start_maximized, WindowStartInFullscreen start_in_fullscreen, const String& title
@@ -18,7 +21,7 @@ ErrorOr<void> Window::initialize(
         WNDCLASSA window_class = {};
         window_class.lpszClassName = "MoonriseDefaultWindowClass";
         window_class.hInstance = GetModuleHandle(nullptr);
-        window_class.lpfnWndProc = DefWindowProcA;
+        window_class.lpfnWndProc = window_procedure;
 
         RegisterClassA(&window_class);
         s_is_window_class_registered = true;
@@ -61,6 +64,22 @@ void Window::destroy()
 
     DestroyWindow(static_cast<HWND>(m_native_handle));
     m_native_handle = nullptr;
+}
+
+LRESULT window_procedure(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
+{
+    switch (message) {
+        case WM_QUIT:
+        case WM_CLOSE: {
+            PFN_EventLoopCallback callback = Application::get().get_event_loop().get_event_callback();
+            AT_ASSERT(callback);
+            auto application_closed_event = ApplicationClosedEvent();
+            callback(window_handle, application_closed_event);
+            return 0;
+        }
+    }
+
+    return DefWindowProcA(window_handle, message, w_param, l_param);
 }
 
 } // namespace GUI::Native

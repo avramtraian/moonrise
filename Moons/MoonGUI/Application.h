@@ -8,6 +8,7 @@
 #include <AT/Error.h>
 #include <AT/Vector.h>
 #include <MoonGUI/GUI.h>
+#include <MoonGUI/Native/EventLoop.h>
 #include <MoonGUI/Window.h>
 
 namespace GUI {
@@ -21,6 +22,20 @@ public:
     GUI_API static void destruct();
 
     NODISCARD GUI_API static Application& get();
+
+public:
+    // The entire application event loop is contained in this function. When it returns, the program
+    // is expected to exit.
+    GUI_API ErrorOr<void> start_event_loop();
+
+    // Will cause the program execution to eventually return to the callsize of the 'start_event_loop' function.
+    GUI_API void close();
+
+    // The callback invoked by the event loop when a window message is posted.
+    void on_event(void* window_native_handle, const Native::Event& event);
+
+    NODISCARD ALWAYS_INLINE Native::EventLoop& get_event_loop() { return m_event_loop; }
+    NODISCARD ALWAYS_INLINE const Native::EventLoop& get_event_loop() const { return m_event_loop; }
 
 public:
     // Returns an empty optional if there is no registered window with the provided native handle.
@@ -38,6 +53,8 @@ private:
     ~Application() = default;
 
 private:
+    Native::EventLoop m_event_loop { {} };
+
     Vector<RefPtr<Window>> m_windows;
 };
 

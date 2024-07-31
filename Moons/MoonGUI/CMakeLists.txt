@@ -8,7 +8,11 @@ set(MOON_GUI_SOURCE_FILES
     Application.h
     Forward.h
     GUI.h
+    Native/Event.h
+    Native/EventLoop.cpp
+    Native/EventLoop.h
     Native/NativeWindow.h
+    Native/Windows/WindowsEventLoop.cpp
     Native/Windows/WindowsHeaders.h
     Native/Windows/WindowsNativeWindow.cpp
     Window.cpp
