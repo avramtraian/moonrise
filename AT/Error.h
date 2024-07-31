@@ -26,6 +26,7 @@ public:
         BufferOverflow,
         IndexOutOfRange,
         InvalidEncoding,
+        InvalidParameter,
         InvalidStringFormat,
         KeyAlreadyExists,
         KeyDoesNotExist,
