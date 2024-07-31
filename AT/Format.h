@@ -79,6 +79,28 @@ struct Formatter<bool> {
 };
 
 template<>
+struct Formatter<void*> {
+    ALWAYS_INLINE static FormatErrorCode format(FormatBuilder& builder, const FormatBuilder::Specifier&, const void* const& value)
+    {
+        char base16_string_buffer[2 * sizeof(void*)] = {};
+
+        u64 value_as_uint = reinterpret_cast<u64>(value);
+        for (usize index = 0; index < 2 * sizeof(void*); ++index) {
+            const u8 digit = value_as_uint % 16;
+            if (digit <= 9)
+                base16_string_buffer[index] = '0' + digit;
+            else
+                base16_string_buffer[index] = 'A' + (digit - 10);
+
+            value_as_uint /= 16;
+        }
+
+        StringView base16_string_view = StringView::create_from_utf8(base16_string_buffer, sizeof(base16_string_buffer));
+        return builder.push_string({}, base16_string_view);
+    }
+};
+
+template<>
 struct Formatter<StringView> {
     ALWAYS_INLINE static FormatErrorCode format(FormatBuilder& builder, const FormatBuilder::Specifier& specifier, const StringView& value)
     {
